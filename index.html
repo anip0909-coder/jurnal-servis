@@ -245,8 +245,7 @@ textarea{resize:vertical;min-height:64px}
 <dialog id="dlgSet"><form class="dlg" id="formSet" method="dialog">
   <div class="dlg-head"><h2>Sambungan Google Sheets</h2><button type="button" class="x" data-close aria-label="Tutup">✕</button></div>
   <label>URL Web App (Apps Script)<input id="setUrl" type="url" placeholder="https://script.google.com/macros/s/…/exec"></label>
-  <label>Token rahsia<input id="setToken" type="password" autocomplete="off" placeholder="Sama dengan TOKEN dalam Script Properties"></label>
-  <p class="hint">Token ditaip di sini sahaja dan disimpan dalam peranti ini. Jangan tulis token dalam fail HTML. Kosongkan URL untuk guna mod tempatan (data disimpan dalam pelayar ini sahaja).</p>
+  <p class="hint">Kosongkan URL untuk guna mod tempatan (data disimpan dalam pelayar ini sahaja). Jangan kongsi URL ini kepada orang lain.</p>
   <div class="dlg-foot"><button type="button" class="btn" data-close>Batal</button><button class="btn primary" type="submit">Simpan &amp; sambung</button></div>
 </form></dialog>
 
@@ -407,7 +406,6 @@ function setSync(mode,text){const s=$('#sync');s.className='chip-sync '+mode;s.q
 
 /* ---------- sambungan Google Sheets ---------- */
 async function api(body){
-  body.token=LS.get('servis.token')||'';
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),credentials:'omit',referrerPolicy:'no-referrer'});
   const j=await r.json();if(!j.ok)throw new Error(j.error||'Ralat');return j;
 }
@@ -558,9 +556,9 @@ $('#btnAddItem').addEventListener('click',()=>openItem());
 $('#btnClearDemo').addEventListener('click',()=>{
   state.items=state.items.filter(i=>!i.contoh);const ids=new Set(state.items.map(i=>i.id));
   state.servis=state.servis.filter(s=>ids.has(s.itemId));saveLocal();render();toast('Data contoh dipadam')});
-$('#btnSet').addEventListener('click',()=>{$('#setUrl').value=url;$('#setToken').value=LS.get('servis.token')||'';$('#dlgSet').showModal()});
+$('#btnSet').addEventListener('click',()=>{$('#setUrl').value=url;$('#dlgSet').showModal()});
 $('#formSet').addEventListener('submit',async e=>{
-  e.preventDefault();url=$('#setUrl').value.trim();LS.set('servis.url',url);LS.set('servis.token',$('#setToken').value.trim());$('#dlgSet').close();
+  e.preventDefault();url=$('#setUrl').value.trim();LS.set('servis.url',url);$('#dlgSet').close();
   if(url){await pull();toast('Disambung ke Google Sheets')}else{setSync('','Tempatan');render()}
 });
 
