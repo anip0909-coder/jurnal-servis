@@ -279,6 +279,12 @@ const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
 const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
 const addMonths=(s,n)=>{const d=parse(s);const day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+n);const max=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(day,max));return iso(d)};
 const diffDays=(a,b)=>Math.round((b-a)/864e5);
+const normDate=v=>{
+  if(!v)return '';v=String(v).trim();
+  let m=v.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];
+  m=v.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);if(m)return m[3]+'-'+pad(m[2])+'-'+pad(m[1]);
+  const d=new Date(v);return isNaN(d)?'':iso(d);
+};
 const fmtD=s=>s?parse(s).toLocaleDateString('ms-MY',{day:'numeric',month:'short',year:'numeric'}):'-';
 const rm=n=>'RM '+(+n||0).toLocaleString('ms-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
 const km=n=>(+n).toLocaleString('ms-MY')+' km';
@@ -305,16 +311,19 @@ function sampleData(){
    {id:'s5',itemId:'c4',tarikh:ago(20),jenis:'Tukar filter',kos:180,odo:'',bengkel:'Coway',nota:'Set 3 filter',seterusTarikh:addMonths(ago(20),12),seterusKm:''}];
   return {items,servis};
 }
+function normState(){
+  state.items=state.items||[];state.servis=(state.servis||[]).map(s=>({...s,tarikh:normDate(s.tarikh),seterusTarikh:normDate(s.seterusTarikh)}));
+}
 function saveLocal(){LS.set('servis.data',JSON.stringify(state))}
 function loadLocal(){
-  try{const raw=LS.get('servis.data');if(raw){state=JSON.parse(raw);return}}catch(e){}
+  try{const raw=LS.get('servis.data');if(raw){state=JSON.parse(raw);normState();return}}catch(e){}
   state=sampleData();saveLocal();
 }
 
 /* ---------- pengiraan status ---------- */
 function info(item){
   const sv=state.servis.filter(s=>s.itemId===item.id).sort((a,b)=>b.tarikh.localeCompare(a.tarikh));
-  const last=sv[0],T=today();
+  const last=sv.find(s=>s.tarikh),T=today();
   const odo=Math.max(+item.odo||0,...sv.map(s=>+s.odo||0));
   let dueDate=null,dueKm=null;
   if(last){
@@ -421,7 +430,7 @@ async function pull(){
   setSync('busy','Memuat turun…');
   try{
     const j=await api({action:'list'});
-    state={items:j.items,servis:j.servis};saveLocal();setSync('on','Disambung');render();
+    state={items:j.items,servis:j.servis};normState();saveLocal();setSync('on','Disambung');render();
   }catch(e){setSync('err','Tiada sambungan');toast('Tidak dapat memuat turun dari Sheets.')}
 }
 
